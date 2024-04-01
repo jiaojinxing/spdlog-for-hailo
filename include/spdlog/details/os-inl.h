@@ -48,6 +48,9 @@
 #elif defined(_AIX)
 #include <pthread.h> // for pthread_getthreadid_np
 
+#elif defined(SYLIXOS)
+#include <pthread.h>
+
 #elif defined(__DragonFly__) || defined(__FreeBSD__)
 #include <pthread_np.h> // for pthread_getthreadid_np
 
@@ -225,13 +228,13 @@ SPDLOG_INLINE size_t filesize(FILE *f)
 
 #else // unix
 // OpenBSD doesn't compile with :: before the fileno(..)
-#if defined(__OpenBSD__)
+#if defined(__OpenBSD__) || defined(SYLIXOS)
     int fd = fileno(f);
 #else
     int fd = ::fileno(f);
 #endif
 // 64 bits(but not in osx or cygwin, where fstat64 is deprecated)
-#if (defined(__linux__) || defined(__sun) || defined(_AIX)) && (defined(__LP64__) || defined(_LP64))
+#if (defined(__linux__) || defined(__sun) || defined(SYLIXOS) || defined(_AIX)) && (defined(__LP64__) || defined(_LP64))
     struct stat64 st;
     if (::fstat64(fd, &st) == 0)
     {
@@ -338,6 +341,8 @@ SPDLOG_INLINE size_t _thread_id() SPDLOG_NOEXCEPT
     uint64_t tid;
     pthread_threadid_np(nullptr, &tid);
     return static_cast<size_t>(tid);
+#elif defined(SYLIXOS)
+    return static_cast<size_t>(pthread_self());
 #else // Default to standard C++11 (other Unix)
     return static_cast<size_t>(std::hash<std::thread::id>()(std::this_thread::get_id()));
 #endif
